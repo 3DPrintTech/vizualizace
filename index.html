@@ -38,10 +38,10 @@
   <input type="file" id="fileInput" accept=".stl" />
 
   <script type="module">
-    import * as THREE from './libs/three.module.js';
-    import { OrbitControls } from './libs/OrbitControls.js';
-    import { STLLoader } from './libs/STLLoader.js';
-
+    import * as THREE from 'https://3dprinttech.github.io/vizualizace/libs/three.module.js';
+    import { OrbitControls } from 'https://3dprinttech.github.io/vizualizace/libs/OrbitControls.js';
+    import { STLLoader } from 'https://3dprinttech.github.io/vizualizace/libs/STLLoader.js';
+ 
     const canvas = document.getElementById('stlCanvas');
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     renderer.setSize(canvas.width, canvas.height);
