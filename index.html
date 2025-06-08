@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
   <meta charset="UTF-8">
-  <title>3D STL Viewer (ES Modules)</title>
+  <title>3D STL Viewer (3DPrintTech)</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -49,8 +49,6 @@
   const container = document.getElementById('viewer');
   let scene, camera, renderer, controls;
 
-  initViewer();
-
   function initViewer() {
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x111111);
@@ -80,6 +78,8 @@
     controls.update();
     renderer.render(scene, camera);
   }
+
+  initViewer();
 
   document.getElementById('stlInput').addEventListener('change', function (event) {
     const file = event.target.files[0];
