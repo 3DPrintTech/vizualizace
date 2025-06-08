@@ -1,88 +1,59 @@
-
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>3D STL Kalkulačka – Verze 2.0</title>
+  <meta charset="UTF-8">
+  <title>STL Kalkulačka 2.0 – Test</title>
   <style>
-    body {
-      font-family: 'Arial', sans-serif;
-      background-color: #121212;
-      color: #e0e0e0;
-      margin: 0;
-      padding: 2rem;
-    }
-    h1 {
-      text-align: center;
-      color: #00e0ff;
-    }
-    #result {
-      margin-top: 1rem;
-      font-size: 1.2rem;
-      padding: 1rem;
-      background: #1e1e1e;
-      border-radius: 10px;
-      border: 1px solid #00e0ff;
-    }
-    input[type="file"] {
-      background-color: #00e0ff;
-      color: #000;
-      padding: 1rem;
-      border: none;
-      border-radius: 10px;
-      font-weight: bold;
-      cursor: pointer;
-      display: block;
-      margin: 1rem auto;
-    }
+    body { margin:0; font-family:Arial,sans-serif; background:#121212; color:#e0e0e0; }
+    #upload { position:absolute; top:10px; left:10px; padding:10px; background:#00e0ff; border:none; color:#000; cursor:pointer; }
+    canvas { width:100vw; height:100vh; display:block; }
   </style>
 </head>
 <body>
-  <h1>🔬 STL Kalkulačka – Výpočet objemu</h1>
-  <input type="file" id="fileInput" accept=".stl" />
-  <div id="result">📂 Nahrajte STL soubor pro výpočet objemu...</div>
+  <input type="file" id="upload" accept=".stl" />
+  <canvas id="c"></canvas>
 
   <script type="module">
     import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.module.js';
     import { STLLoader } from 'https://cdn.jsdelivr.net/npm/three@0.150.1/examples/jsm/loaders/STLLoader.js';
+    import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.150.1/examples/jsm/controls/OrbitControls.js';
 
-    function computeVolume(geometry) {
-      const pos = geometry.attributes.position;
-      const faces = pos.count / 3;
-      let volume = 0;
-      const p1 = new THREE.Vector3(), p2 = new THREE.Vector3(), p3 = new THREE.Vector3();
+    const canvas = document.getElementById('c');
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias:true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
 
-      for (let i = 0; i < faces; i++) {
-        p1.fromBufferAttribute(pos, i * 3 + 0);
-        p2.fromBufferAttribute(pos, i * 3 + 1);
-        p3.fromBufferAttribute(pos, i * 3 + 2);
-        volume += p1.dot(p2.clone().cross(p3)) / 6.0;
-      }
-      return Math.abs(volume);
-    }
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x121212);
 
-    document.getElementById("fileInput").addEventListener("change", async (event) => {
-      const file = event.target.files[0];
+    const camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.1, 1000);
+    camera.position.set(0,0,100);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+    const light = new THREE.DirectionalLight(0xffffff, 0.8);
+    light.position.set(50, 50, 100);
+    scene.add(light);
+
+    let mesh;
+    document.getElementById('upload').onchange = e => {
+      const file = e.target.files[0];
       if (!file) return;
+      new THREE.FileLoader().setResponseType('arraybuffer').load(URL.createObjectURL(file), data => {
+        const geom = new STLLoader().parse(data);
+        geom.computeBoundingBox();
+        const ctr = geom.boundingBox.getCenter(new THREE.Vector3());
+        geom.translate(-ctr.x, -ctr.y, -ctr.z);
+        if (mesh) scene.remove(mesh);
+        mesh = new THREE.Mesh(geom, new THREE.MeshPhongMaterial({ color: 0x00e0ff }));
+        scene.add(mesh);
+      });
+    };
 
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        const loader = new STLLoader();
-        const geometry = loader.parse(e.target.result);
-        const volumeMM3 = computeVolume(geometry);
-        const volumeCM3 = volumeMM3 / 1000;
-        const density = 1.24; // g/cm3 pro PLA
-        const weight = volumeCM3 * density;
-
-        const result = document.getElementById("result");
-        result.innerHTML = `
-          📦 Objem modelu: <strong>${volumeCM3.toFixed(2)} cm³</strong><br/>
-          ⚖️ Odhad hmotnosti (PLA): <strong>${weight.toFixed(2)} g</strong>
-        `;
-      };
-      reader.readAsArrayBuffer(file);
-    });
+    function animate() { requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); }
+    animate();
+    window.onresize = () => { camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); };
   </script>
 </body>
 </html>
